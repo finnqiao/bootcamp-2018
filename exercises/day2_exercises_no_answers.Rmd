@@ -24,6 +24,7 @@ Load the `gapminder` dataset.
 
 ```{asis}
 ### Answer
+
 ```
 
 ```{r}
