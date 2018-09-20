@@ -1,0 +1,27 @@
+---
+title: "postgres day 4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library (RPostgreSQL)
+
+
+connection <- DBI::dbConnect(odbc::odbc(), Driver = "PostgreSQL",
+                             Server="pg", Database = "dvdrental", PWD =
+                               rstudioapi::askForPassword("Database password: "))
+
+results <- dbGetQuery(connection,
+                      "SELECT customer.first_name, customer.last_name
+                      FROM customer
+                      LIMIT 10")
+```
+
+```{r}
+results
+```
+

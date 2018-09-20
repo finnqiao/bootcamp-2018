@@ -270,6 +270,7 @@ merged_df %>%
 
 2. For the counties with the top 5 and bottom 5 poverty rate: percent of population in poverty, percent of students qualifying for free or reduced price lunch, mean reading score, and mean math score.
 ```{r}
+# creates dataframe with the top 5 pov values
 merged_df %>%
   group_by(county_name) %>%
   arrange(county_per_poverty) %>%
@@ -278,6 +279,7 @@ merged_df %>%
 ```
 
 ```{r}
+# creates dataframe with the bottom 5 pov values
 merged_df %>%
   group_by(county_name) %>%
   arrange(county_per_poverty) %>%
@@ -289,10 +291,22 @@ merged_df %>%
 
 Using `ggplot2`, visualize the following:
 
+```{r}
+schools %>%
+  group_by(school_name) %>%
+  summarize()
+```
+
+
 1. The relationship between access to free/reduced price lunch and test performance, at the *school* level.
 
 ```{r}
 schools %>%
+  group_by(school_name) %>%
+  mutate(comb_lunch = per_reduced_lunch + per_free_lunch) %>%
+  mutate(comb_scores = (mean_math_score + mean_ela_score)/2) %>%
+  ggplot() +
+  geom_point(aes(x=comb_scores, y=comb_lunch))
   
 ```
 
