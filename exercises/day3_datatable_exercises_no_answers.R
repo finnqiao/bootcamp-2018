@@ -11,27 +11,27 @@
 # read in data ----
 
 # import data.table library
-# library(data.table)
-# library(lubridate)
+library(data.table)
+library(lubridate)
 
-# data_file <- here::here("data", "generation.csv")
+data_file <- here::here("data", "generation.csv")
 
 # read in two versions of data, one as a data.frame and one as a data.table
-# generation_df <- read.csv(data_file, stringsAsFactors = F)
-# generation_dt <- fread(data_file)
+generation_df <- read.csv(data_file, stringsAsFactors = F)
+generation_dt <- fread(data_file)
 
 # compare
-# View(generation_df)
-# View(generation_dt)
+View(generation_df)
+View(generation_dt)
 
-# generation_df
-# generation_dt
+generation_df
+generation_dt
 
-# class(generation_df) # "data.frame"
-# class(generation_dt) # "data.table" "data.frame"
+class(generation_df) # "data.frame"
+class(generation_dt) # "data.table" "data.frame"
 
-# str(generation_df)
-# str(generation_dt)
+str(generation_df)
+str(generation_dt)
 
 # -----------------------------------------------------------------------------|
 # slicing, column operations, and group by ----
@@ -50,28 +50,28 @@
 # select(generation_df, datetime, small_hydro)
 # 
 # data.table column selection (multiple)
-# generation_dt[,.(datetime, small_hydro)]
-# generation_dt[,.(small_hydro)]
+generation_dt[,.(datetime, small_hydro)]
+generation_dt[,.(small_hydro)]
 
 
 # add row filter in i
-# generation_dt[solar == 0,.(datetime, small_hydro)]
+generation_dt[solar == 0,.(datetime, small_hydro)]
 
 
 
 # try column operations
-# generation_dt[,small_hydro + large_hydro]
+generation_dt[,small_hydro + large_hydro]
 
 
 
-# generation_dt[,.(datetime, 
-#                  small_hydro, 
-#                  large_hydro, 
-#                  all_hydro = small_hydro + large_hydro)]
+generation_dt[,.(datetime,
+                 small_hydro,
+                 large_hydro,
+                 all_hydro = small_hydro + large_hydro)]
 
 
 # try in-place column operations
-# generation_dt[,all_hydro := small_hydro + large_hydro]
+generation_dt[,all_hydro := small_hydro + large_hydro]
 
 
 # generation_dt["all_hydro"] <- generation_dt["small_hydro"] + generation_dt["large_hydro"]
@@ -82,17 +82,17 @@
 # solar plants is zero?
 
 # one way to generate this
-# generation_dt[solar > 0, solar_on := TRUE]
-# generation_dt[is.na(solar_on), solar_on := FALSE]
+generation_dt[solar > 0, solar_on := TRUE]
+generation_dt[is.na(solar_on), solar_on := FALSE]
 
 # sum by solar_on column
-# generation_dt[,sum(all_hydro), by = solar_on]
+generation_dt[,sum(all_hydro), by = solar_on]
 
 # technically, can do this all in one line
-# generation_dt[,sum(all_hydro), by = solar > 0]
+generation_dt[,sum(all_hydro), by = solar > 0]
 
 # can add as many by groupings as we want
-# generation_dt[,sum(all_hydro), by = .(solar > 0, wind > 0)]
+generation_dt[,sum(all_hydro), by = .(solar > 0, wind > 0)]
 
 # Exercise 1
 #
@@ -101,6 +101,9 @@
 # object. Then, create a new `data.table` that contains the total renewable
 # energy generation (solar + wind) by hour and day.
 # Hint: you will probably need lubridate's functions `day()` and `hour()`
+
+generation_dt[,datetime:=as_datetime(datetime)]
+generation_dt[,.(solar_wind=solar+wind),by = .(day(datetime), hour(datetime))]
 
 # run answer
 

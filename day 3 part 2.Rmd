@@ -1,0 +1,325 @@
+---
+title: "Day 3 Part 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+source(here::here("data/day3_objects.R"))
+```
+```{r}
+ggplot(data = gapminder07) + geom_point(mapping = aes(x=gdpPercap, y=lifeExp))
+```
+
+```{r}
+ggplot(data = gapminder07) +
+  geom_point(mapping = aes(x = log(pop), y = log(gdpPercap))) +
+  labs(title = "Logs", x="log of population", y="log of gdp per cap")
+```
+
+```{r}
+long_gen %>%
+  group_by(datetime) %>%
+  summarise(output=sum(output)) %>%
+  ggplot() +
+  geom_col(aes(x=datetime, y=output)) +
+  labs(title = "Total energy by hour", x="Hour", y="Output")
+```
+
+```{r}
+head(long_gen)
+```
+
+
+```{r}
+long_gen %>%
+  filter(source == "large_hydro" | source == "small_hydro") %>%
+  group_by(datetime) %>%
+  summarise(output = sum(output)) %>%
+  ggplot() +
+  geom_col(aes(x=datetime, y=output)) +
+  labs(title = "hydroelectric power generated over time")
+  
+```
+
+```{r}
+long_gen %>%
+  group_by(source) %>%
+  summarise(output = sum(output), mean_output = mean(output)) %>%
+  ggplot() +
+  geom_col(aes(x=source, y=output), fill = "darkred") +
+  geom_point(aes(x=source, y=mean_output), fill = "darkred") + 
+  geom_hline(aes(yintercept = mean(output))) +
+  labs(title = "Total output from sources", x = "source", y="total output")
+```
+
+```{r}
+long_gen %>%
+  filter(source == "wind" | source == "solar" | source == "geothermal") %>%
+  ggplot() + 
+  geom_line(aes(x=datetime, y=output, col = source, group =source), size = 1.5)+
+  scale_x_datetime(date_breaks = "1 week") +
+  scale_color_brewer(palette = "Accent", name = "Energy source")
+```
+
+```{r}
+long_merged_energy %>%
+  merge(regroup, by.x = 'source', by.y = 'type') %>%
+  mutate(hour = lubridate::hour(datetime)) %>%
+  group_by(hour, source) %>%
+  ggplot() + 
+  geom_col(aes(x=hour, y=output, group=group, fill = group)) + 
+  scale_color_brewer(palette = "Spectral") +
+  labs(title = "Average hourly output by source", x="Hour of day", y="Average hourly output") + 
+  theme_bw()
+```
+
+```{r}
+regroup
+```
+
+
+```{r}
+long_gen %>%
+  merge(regroup, by.x = "source", by.y = "type") %>%
+  
+  ggplot() +
+  geom_line(aes(x=datetime, y=output,group=group, col=group)) +
+  scale_color_brewer(palette="Spectral") +
+  facet_wrap(~source, scales="free")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+# MSIA Boot Camp - Final R exercise
+
+You've learned quite a lot about R in a short time. Congratulations! This exercise is designed to give you some additional practice on the material we have discussed this week while the lectures are still fresh in your mind, and to integrate different tools and skills that you have learned.
+
+## Instructions
+
+#### Task 1: Import your data 
+
+Read the data files `nys_schools.csv` and `nys_acs.csv` into R. These data come from two different sources: one is data on *schools* in New York state from the [New York State Department of Education](http://data.nysed.gov/downloads.php), and the other is data on *counties* from the American Communities Sruvey from the US Census Bureau. Review the codebook file so that you know what each variable name means in each dataset. 
+
+```{r}
+# reading in the files
+schools <- read.csv(here::here("data", "nys_schools.csv"), stringsAsFactors = F)
+acs <- read.csv(here::here("data", "nys_acs.csv"), stringsAsFactors = F)
+```
+
+#### Task 2: Explore your data
+
+Getting to know your data is a critical part of data analysis. Take the time to explore the structure of the two dataframes you have imported. What types of variables are there? Is there any missing data? How can you tell? What else do you notice about the data?
+
+```{r}
+# structure for schools dataframe
+str(schools)
+```
+
+```{r}
+# structure for acs dataframe
+str(acs)
+```
+
+```{r}
+# checking for NA values in schools
+apply(schools, 2, function(x) any(is.na(x)))
+```
+
+```{r}
+# checking for NA values in acs
+apply(acs, 2, function(x) any(is.na(x)))
+```
+
+
+#### Task 3: Recoding and variable manipulation
+
+1. Deal with missing values, which are currently coded as `-99`.
+
+```{r}
+# check for -99 values in schools
+apply(schools, 2, function(x) any(x == '-99'))
+```
+
+```{r}
+# check for -99 values in acs
+apply(acs, 2, function(x) any(x == '-99'))
+```
+
+Only district_name, county_name, and region have missing values
+```{r}
+# district_name values
+schools[schools$district_name == '-99',]
+schools[schools$county_name == '-99',]
+schools[schools$region == '-99',]
+```
+There seems to be only 19 rows that have the missing values so they can be safely removed.
+
+```{r}
+# new dataframe without missing values
+schools <- schools[schools$district_name != '-99',]
+acs <-acs[acs$county_name != '-99',]
+str(schools)
+str(acs)
+```
+
+2. Create a categorical variable that groups counties into "high", "medium", and "low" poverty groups. Decide how you want to split up the groups and briefly explain your decision. 
+
+```{r}
+quantile(acs$county_per_poverty, c(0.25,0.5,0.75))
+```
+
+I ran the quantile function to get the 25%, 50%, and 75% percentiles for the group and use them as baseline. While not perfect, they give a rough estimate of the bands without further exploration of the subject at hand.
+
+For the purpose of this submission, I round them to 0.11, 0.13, and 0.15.
+
+```{r}
+# cut function 
+acs$poverty_band <- cut(acs$county_per_poverty, quantile(acs$county_per_poverty, c(0,0.25, 0.5, 1)), c('low','medium','high'))
+
+#checking if bands are correct
+head(acs)
+tail(acs)
+```
+
+
+3. The tests that the NYS Department of Education administers changes from time to time, so scale scores are not directly comparable year-to-year. Create a new variable that is the standardized z-score for math and English Language Arts (ELA) for each year (hint: group by year and use the `scale()` function)
+
+```{r}
+schools$z_math <- scale(schools$mean_math_score, center=TRUE, scale=TRUE)
+
+schools$z_ela <- scale(schools$mean_ela_score, center=TRUE, scale=TRUE)
+
+schools
+```
+
+
+#### Task 4: Merge datasets
+
+Create a county-level dataset that merges variables from the schools dataset and the ACS dataset. Remember that you have learned multiple approaches on how to do this, and that you will have to decide how to summarize data when moving from the school to the county level.
+
+Both dataframes have the county name and thus that was the variable that I merged on. Whichever dataframe came first did not seem to matter as much, especially with the groupings that were to be applied later.
+
+```{r}
+merged_df <- merge(schools, acs, by = c("county_name","year"), all.x=T)
+dim(merged_df)
+```
+
+
+#### Task 5: Create summary tables
+
+Generate tables showing the following:
+
+1. For each county: total enrollment, percent of students qualifying for free or reduced price lunch, and percent of population in poverty.
+
+```{r}
+names(merged_df)
+```
+
+```{r}
+merged_df %>%
+  group_by(county_name, year) %>%
+  summarise(state_enroll = sum(total_enroll), reduced_lunch_per = mean(per_reduced_lunch), free_lunch_per = mean(per_free_lunch), poverty_per = mean(county_per_poverty))
+```
+
+2. For the counties with the top 5 and bottom 5 poverty rate: percent of population in poverty, percent of students qualifying for free or reduced price lunch, mean reading score, and mean math score.
+```{r}
+merged_df %>%
+  group_by(county_name) %>%
+  arrange(county_per_poverty) %>%
+  summarise(mean_pov = mean(county_per_poverty, na.rm = T), reduced_lunch_per = mean(per_reduced_lunch), free_lunch_per = mean(per_free_lunch), mean_math = mean(mean_math_score), mean_ela = mean(mean_ela_score)) %>%
+  top_n(5)
+```
+
+```{r}
+merged_df %>%
+  group_by(county_name) %>%
+  arrange(county_per_poverty) %>%
+  summarise(mean_pov = mean(county_per_poverty, na.rm = T), reduced_lunch_per = mean(per_reduced_lunch), free_lunch_per = mean(per_free_lunch), mean_math = mean(mean_math_score), mean_ela = mean(mean_ela_score)) %>%
+  top_n(-5)
+```
+
+#### Task 6: Data visualization
+
+Using `ggplot2`, visualize the following:
+
+1. The relationship between access to free/reduced price lunch and test performance, at the *school* level.
+
+```{r}
+schools %>%
+  
+```
+
+2. Average test performance across *counties* with high, low, and medium poverty.
+```{r}
+
+```
+
+#### Task 7: Answering questions
+
+Using the skills you have learned in the past three days, tackle the following question: 
+
+> What can the data tell us about the relationship between poverty and test performance in New York public schools? Has this relationship changed over time? Is this relationship at all moderated by access to free/reduced price lunch?
+
+You may use summary tables, statistical models, and/or data visualization in pursuing an answer to this question. Feel free to build on the tables and plots you generated above in Tasks 5 and 6.
+
+Given the short time period, any answer will of course prove incomplete. The goal of this task is to give you some room to play around with the skills you've just learned. Don't hesitate to try something even if you don't feel comfortable with it yet. Do as much as you can in the time allotted.
+
+## Github submission
+
+When you have completed the exercise, save your Markdown file in the `submissions` folder of your forked repo using this naming convention: `FinalRExercise_LastnameFirstname.Rmd`. Commit changes periodically, and push commits when you are done.
+
+You can optionally create a pull request to submit this file (and other exercise files from the bootcamp sessions) to the base repo that lives in the MSiA organization. If you would like to do this, make sure that all new files you have created are in the `submissions` folder, and then create a pull request that asks to merge changes from your forked repo to the base repo. 
+
+## Reminders
+
+- Remember to **load necessary packages**.
+- Remember to **comment extensively** in your code. Since you will be working in an RMarkdown file, you can describe your workflow in the text section. But you should also comment within all of your code chunks.
+- Attempt to knit your Markdown file into HTML format before committing it to Github. Troubleshoot any errors with the knit process by checking the lines referred to in the error messages.
+
